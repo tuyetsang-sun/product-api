@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:latest
+    container_name: nammongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    networks:
+      - product-network
+
+  product-api:
+    build: .
+    container_name: product-api
+    ports:
+      - "3000:3000"
+    environment:
+      - MONGO_URI=mongodb://nammongodb:27017/productdb
+      - PORT=3000
+    depends_on:
+      - mongodb
+    networks:
+      - product-network
+
+volumes:
+  mongo-data:
+
+networks:
+  product-network:
+    driver: bridge
