@@ -7,7 +7,8 @@
         "start": "node src/server.js",
         "dev": "node --watch src/server.js",
         "check": "node --check src/models/Product.js && node --check src/app.js && node --check src/server.js && node --check src/healthcheck.js",
-        "test": "node --test tests/product.model.test.js"
+        "test": "node --test tests/product.model.test.js",
+        "test:integration": "node --test tests/product.integration.test.js"
     },
     "repository": {
         "type": "git",
