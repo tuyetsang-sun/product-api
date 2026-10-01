@@ -147,3 +147,94 @@ jobs:
       - name: Clean up CI containers
         if: always()
         run: docker compose -f docker-compose-ci.yaml down --volumes
+  deploy-local:
+    name: Deploy to local Docker Engine
+    needs: publish
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    runs-on: [self-hosted, Windows, X64]
+    timeout-minutes: 10
+
+    concurrency:
+      group: product-api-local-deployment
+      cancel-in-progress: false
+
+    env:
+      LOCAL_DEPLOY_DIR: ${{ vars.LOCAL_DEPLOY_DIR }}
+      DOCKERHUB_USERNAME: ${{ vars.DOCKERHUB_USERNAME }}
+      IMAGE_TAG: sha-${{ github.sha }}
+      API_BASE_URL: http://127.0.0.1:3000
+
+    steps:
+      - name: Pull and deploy tested image
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+
+          if ([string]::IsNullOrWhiteSpace($env:LOCAL_DEPLOY_DIR)) {
+            throw 'Missing LOCAL_DEPLOY_DIR repository variable.'
+          }
+
+          Set-Location -LiteralPath $env:LOCAL_DEPLOY_DIR
+
+          if (-not (Test-Path -LiteralPath '.env.prod')) {
+            throw 'Missing local .env.prod file.'
+          }
+
+          function Invoke-Docker {
+            param([string[]]$DockerArgs)
+
+            & docker --context desktop-linux @DockerArgs
+
+            if ($LASTEXITCODE -ne 0) {
+              throw "Docker command failed with exit code $LASTEXITCODE."
+            }
+          }
+
+          $compose = @(
+            'compose',
+            '--env-file', '.env.prod',
+            '-f', 'docker-compose-prod.yaml'
+          )
+
+          Invoke-Docker -DockerArgs @('version')
+          Invoke-Docker -DockerArgs ($compose + @('config', '--quiet'))
+          Invoke-Docker -DockerArgs ($compose + @('pull', 'product-api'))
+
+          Invoke-Docker -DockerArgs ($compose + @(
+            'up', '-d',
+            '--no-build',
+            '--wait',
+            '--wait-timeout', '120'
+          ))
+
+          Invoke-Docker -DockerArgs ($compose + @('ps'))
+
+          $actualImage = Invoke-Docker -DockerArgs @(
+            'inspect',
+            '--format', '{{.Config.Image}}',
+            'product-api'
+          )
+
+          $expectedImage = "$($env:DOCKERHUB_USERNAME)/product-api:$($env:IMAGE_TAG)"
+
+          if ($actualImage.Trim() -ne $expectedImage) {
+            throw "Wrong image. Expected: $expectedImage. Actual: $actualImage"
+          }
+
+          Invoke-Docker -DockerArgs @(
+            'exec', 'product-api',
+            'node', 'src/healthcheck.js'
+          )
+
+          node --test tests/product.integration.test.js
+
+          if ($LASTEXITCODE -ne 0) {
+            throw 'Local CRUD integration tests failed.'
+          }
+
+          Write-Host "Deployment successful: $actualImage"
+
+      - name: Show local API logs
+        if: always()
+        shell: powershell
+        run: docker --context desktop-linux logs --tail 50 product-api
