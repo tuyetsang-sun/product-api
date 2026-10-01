@@ -1,0 +1,29 @@
+{
+    "name": "product-api",
+    "version": "1.0.0",
+    "description": "",
+    "main": "src/server.js",
+    "scripts": {
+        "start": "node src/server.js",
+        "dev": "node --watch src/server.js",
+        "check": "node --check src/models/Product.js && node --check src/app.js && node --check src/server.js && node --check src/healthcheck.js",
+        "test": "node --test tests/product.model.test.js"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/tuyetsang-sun/product-api.git"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "type": "commonjs",
+    "bugs": {
+        "url": "https://github.com/tuyetsang-sun/product-api/issues"
+    },
+    "homepage": "https://github.com/tuyetsang-sun/product-api#readme",
+    "dependencies": {
+        "dotenv": "^17.4.2",
+        "express": "^5.2.1",
+        "mongoose": "^9.10.3"
+    }
+}
