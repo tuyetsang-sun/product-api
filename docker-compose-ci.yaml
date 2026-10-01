@@ -1,0 +1,32 @@
+name: product-api-ci
+
+services:
+  nammongodb:
+    image: mongo:8.0
+    healthcheck:
+      test:
+        - CMD
+        - mongosh
+        - --quiet
+        - --eval
+        - "quit(db.adminCommand({ ping: 1 }).ok === 1 ? 0 : 1)"
+      interval: 10s
+      timeout: 5s
+      start_period: 20s
+      retries: 5
+
+  product-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ${PRODUCT_IMAGE:-product-api:ci}
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      HOST: "0.0.0.0"
+      MONGODB_URI: mongodb://nammongodb:27017/productdb_ci
+    ports:
+      - "127.0.0.1:3000:3000"
+    depends_on:
+      nammongodb:
+        condition: service_healthy
