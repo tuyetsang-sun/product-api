@@ -66,3 +66,9 @@ test('Tu choi quantity am', async() => {
 test('Tu choi quantity la so thap phan', async() => {
     await expectValidationError({ quantity: 1.5 }, 'quantity');
 });
+
+
+test('Loai bo khoang trang thua trong pname', () => {
+    const product = createProduct({ pname: '  But bi  ' });
+    assert.equal(product.pname, 'But bi');
+});
