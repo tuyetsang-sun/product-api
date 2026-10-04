@@ -72,3 +72,9 @@ test('Loai bo khoang trang thua trong pname', () => {
     const product = createProduct({ pname: '  But bi  ' });
     assert.equal(product.pname, 'But bi');
 });
+
+test('Chuan hoa ten tieng Viet co khoang trang hai dau', () => {
+    const product = createProduct({ pname: '  Bàn phím  ' });
+
+    assert.equal(product.pname, 'Bàn phím');
+});
