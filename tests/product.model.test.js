@@ -67,10 +67,15 @@ test('Tu choi quantity la so thap phan', async() => {
     await expectValidationError({ quantity: 1.5 }, 'quantity');
 });
 
-
 test('Loai bo khoang trang thua trong pname', () => {
     const product = createProduct({ pname: '  But bi  ' });
     assert.equal(product.pname, 'But bi');
+});
+
+test('Chap nhan pid co gach ngang va gach duoi', async() => {
+    const product = createProduct({ pid: 'SP_TEST-01' });
+
+    await assert.doesNotReject(product.validate());
 });
 
 test('Chuan hoa ten tieng Viet co khoang trang hai dau', () => {
